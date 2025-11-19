@@ -1,0 +1,39 @@
+services:
+
+  llm:
+    image: sinanozel/ollama.0.12.2:llava-7b
+    ports:
+      - "11434:11434"
+    networks:
+      - nutrition-information-extraction-evaluation
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - driver: nvidia
+            capabilities: ["gpu"]
+            count: all
+
+  embedding:
+    image: sinanozel/ollama.0.12.2:all-minilm-33m
+    networks:
+      - nutrition-information-extraction-evaluation
+
+  evaluator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - OLLAMA_URL=http://llm:11434
+      - OLLAMA_MODELS=ollama/llava:7b
+      - MISTRAL_API_KEY=${MISTRAL_API_KEY}
+    depends_on:
+      # - llm
+      - embedding
+    networks:
+      - nutrition-information-extraction-evaluation
+    tty: true
+
+networks:
+  nutrition-information-extraction-evaluation:
+    driver: bridge

@@ -1,0 +1,26 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "evaluate_nutrition_information_extraction",
+      "type": "shell",
+      "command": "docker",
+      "args": [
+        "compose",
+        "-f", "${workspaceFolder}/nutrition_information_extraction/docker-compose.yaml",
+        "--project-directory", "${workspaceFolder}/nutrition_information_extraction",
+        "up",
+        "--build",
+        "--abort-on-container-exit",
+        "--exit-code-from", "evaluator"
+      ],
+      "problemMatcher": [],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      }
+    }
+  ]
+}
+
+
