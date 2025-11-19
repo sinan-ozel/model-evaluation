@@ -52,8 +52,7 @@ services:
       - OLLAMA_MODELS=ollama/llava:7b
       - MISTRAL_API_KEY=${MISTRAL_API_KEY}
     depends_on:
-      # - llm
-      - embedding
+      - llm
     networks:
       - nutrition-information-extraction-evaluation
     tty: true
