@@ -14,6 +14,11 @@ This repository empowers you to seamlessly evaluate machine learning models. Her
 2. 💻 **VS Code** (Optional) – Use VS Code tasks to simplify commands and workflow.
 3. 🔗 **GitHub** – Skip local setup entirely; run evaluations automatically on GitHub Actions.
 
+# 🎓 Required Knowledge
+
+1. 🧪 `pytest` (on 🐍 Python, obviously)
+2. 🐳 Docker, but just setting environmental variables on `docker-compose.yaml` based on the existing example should be enough.
+
 
 # Locally-run Example
 
