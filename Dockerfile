@@ -13,10 +13,5 @@ RUN pip install --no-cache-dir pillow==12.0.0
 
 WORKDIR /tests
 
-# Copy tests and optionally source code if needed for imports
-COPY test_*.py .
-
-COPY images/* images/
-
 # Set default command to run pytest
 CMD ["pytest"]
