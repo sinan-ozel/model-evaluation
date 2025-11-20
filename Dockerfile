@@ -14,4 +14,4 @@ RUN pip install --no-cache-dir pillow==12.0.0
 WORKDIR /tests
 
 # Set default command to run pytest
-CMD ["pytest"]
+CMD ["pytest", "--disable-warnings", "-v"]

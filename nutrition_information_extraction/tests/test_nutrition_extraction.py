@@ -1,5 +1,6 @@
 import os
 import base64
+import warnings
 
 import pytest
 
@@ -87,12 +88,11 @@ if HF_API_KEY:
     for model in os.getenv("HF_MODELS").split(","):
         PROVIDERS.append({
             "model": model.strip(),
-            "api_base": "https://router.huggingface.co/hf-inference",
             "extra": {"api_key": HF_API_KEY}
         })
 
 
-@pytest.mark.parametrize("provider", PROVIDERS, ids=lambda x: x["model"] + ' on ' + x["api_base"])
+@pytest.mark.parametrize("provider", PROVIDERS, ids=lambda x: x["model"] + (' on ' + x["api_base"] if x.get("api_base") else ''))
 def test_nutrition_extraction(provider):
     test_case = 'IMG_B768CE83-9FEC-461A-BE63-CDDF64EBEB58'
     image_format = 'jpeg'
@@ -120,13 +120,16 @@ def test_nutrition_extraction(provider):
             ]
         }
     ]
-    response = completion(
+    kwargs = dict(
         model=provider["model"],
         messages=messages,
-        api_base=provider["api_base"],
         api_key=provider.get("extra", {}).get("api_key"),
         max_tokens=64,
     )
+    if provider.get("api_base"):
+        kwargs["api_base"] = provider["api_base"]
+    with warnings.catch_warnings():
+        response = completion(**kwargs)
 
     actual = response.get('choices')[0].to_dict().get('message', {}).get('content').strip()
     print("Response:", actual)
