@@ -103,7 +103,9 @@ def test_nutrition_extraction(provider):
     prompt = """The image is the label of a packaged food product.
         Give me the number of calories per serving as integer.
         Do not print anything else, just the integer value.
-    """
+        Do not include units like "calories" or "kcal".
+        No explanation, do not write a complete sentence,
+        please just write the integer value."""
     messages = [
         {
             "role": "user",
@@ -134,4 +136,5 @@ def test_nutrition_extraction(provider):
 
     actual = response.get('choices')[0].to_dict().get('message', {}).get('content').strip()
     print("Response:", actual)
+    assert actual.strip() == "180"
     assert int(actual) == 180
