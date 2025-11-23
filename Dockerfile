@@ -8,10 +8,11 @@ RUN apt-get update \
 # Install pytest and any other dependencies
 RUN pip install --no-cache-dir pytest==9.0.1
 RUN pip install --no-cache-dir pytest-depends==1.0.1
+RUN pip install --no-cache-dir pytest-repeated==0.1.0
 RUN pip install --no-cache-dir litellm==1.80.0
 RUN pip install --no-cache-dir pillow==12.0.0
 
 WORKDIR /tests
 
-# Set default command to run pytest
-CMD ["pytest", "--disable-warnings", "-v"]
+
+CMD ["pytest", "--disable-warnings", "-vv"]

@@ -93,6 +93,7 @@ if HF_API_KEY:
 
 
 @pytest.mark.parametrize("provider", PROVIDERS, ids=lambda x: x["model"] + (' on ' + x["api_base"] if x.get("api_base") else ''))
+@pytest.mark.repeated(times=100, threshold=1)
 def test_nutrition_extraction(provider):
     test_case = 'IMG_B768CE83-9FEC-461A-BE63-CDDF64EBEB58'
     image_format = 'jpeg'
