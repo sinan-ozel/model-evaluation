@@ -40,6 +40,9 @@ services:
     tty: true
     volumes:
       - ./tests:/tests
+      - ./prompts:/prompts
+      - ./evaluation:/evaluation
+    command: ["pytest", "--disable-warnings", "-vvv", "--full-trace", "-rs"]
 
 networks:
   nutrition-information-extraction-evaluation:

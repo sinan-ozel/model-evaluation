@@ -1,0 +1,21 @@
+cases:
+  - id: calories-label-180
+    steps:
+      - input:
+          prompt_path: "../prompts/calories_label.md"
+          image_path: "images/IMG_B768CE83-9FEC-461A-BE63-CDDF64EBEB58.jpeg"
+          max_tokens: 64
+        expectations:
+          - type: equals
+            value: "180"
+
+  - id: calories-label-harvest-trail-mix
+    steps:
+      - input:
+          prompt_path: "../prompts/calories_label.md"
+          image_path: "images/IMG_3236.HEIC"
+          max_tokens: 64
+        expectations:
+          - type: within_percentage
+            value: "220"
+            tolerance_pct: 10
