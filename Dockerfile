@@ -8,7 +8,7 @@ RUN apt-get update \
 # Install pytest and any other dependencies
 RUN pip install --no-cache-dir pytest==9.0.1
 RUN pip install --no-cache-dir pytest-depends==1.0.1
-RUN pip install --no-cache-dir pytest-repeated==0.2.3.dev202511262212
+RUN pip install --no-cache-dir pytest-repeated==0.3.3
 RUN pip install --no-cache-dir litellm==1.80.0
 RUN pip install --no-cache-dir pillow==12.0.0
 RUN pip install --no-cache-dir pillow-heif==1.1.1

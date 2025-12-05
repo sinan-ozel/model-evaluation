@@ -38,7 +38,7 @@ services:
       - ./providers:/providers
       - ./prompts:/prompts
       - ./evaluation:/evaluation
-    command: ["pytest", "--disable-warnings", "-vv", "--full-trace", "-rs"]
+    command: ["pytest", "--disable-warnings", "-vvv", "--full-trace", "-rs", "--maxfail=1"]
 
 networks:
   nutrition-information-extraction-evaluation:
