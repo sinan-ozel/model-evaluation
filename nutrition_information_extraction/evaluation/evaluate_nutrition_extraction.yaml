@@ -1,6 +1,10 @@
 prompt_path: "../prompts/calories_label.md"
+repeat: 10
+threshold: 0
 cases:
   - id: calories-label-180
+    repeat: 20
+    threshold: 5
     steps:
       - input:
           prompt_path: "../prompts/calories_label.md"

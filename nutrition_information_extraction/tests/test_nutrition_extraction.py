@@ -120,8 +120,12 @@ def load_evaluation_cases() -> List[Dict[str, Any]]:
     if top_level_prompt and top_level_prompt_path:
         raise ValueError(f"Cannot have both 'prompt' and 'prompt_path'."
                          "Either write the prompt into the YAML file or provide a prompt file path.")
+    top_level_repeat = data.get("repeat", data.get("repeat"))
+    top_level_threshold = data.get("threshold", data.get("threshold"))
     for test in data.get("cases", []):
         test_id = test.get("id")
+        repeat = test.get("repeat", top_level_repeat)
+        threshold = test.get("threshold", top_level_threshold)
         steps = test.get("steps", [])
         if not test_id:
             raise ValueError("Every test must have an 'id'.")
@@ -178,7 +182,10 @@ def load_evaluation_cases() -> List[Dict[str, Any]]:
                 "max_tokens": max_tokens,
                 "expectations": expectations,
             })
-        all_tests.append({"id": test_id, "steps": parsed_steps})
+        all_tests.append({"id": test_id,
+                          "repeat": repeat,
+                          "threshold": threshold,
+                          "steps": parsed_steps})
     return all_tests
 
 
@@ -223,13 +230,26 @@ def expect_approx_pct(actual: str, spec: Dict[str, Any]) -> None:
 
 EVALUATION_CASES = load_evaluation_cases()
 
+
+# @pytest.mark.parametrize(
+#     "id, steps",
+#     [(c["id"], c["steps"]) for c in EVALUATION_CASES],
+#     ids=[c["id"] for c in EVALUATION_CASES],
+# )
+# @pytest.mark.parametrize("provider", PROVIDERS, ids=lambda x: x["model"] + (' on ' + x["api_base"] if x.get("api_base") else ''))
+# @pytest.mark.repeated(times=5, threshold=0)
 @pytest.mark.parametrize(
     "id, steps",
-    [(c["id"], c["steps"]) for c in EVALUATION_CASES],
-    ids=[c["id"] for c in EVALUATION_CASES],
+    [
+        pytest.param(
+            c["id"], c["steps"],
+            marks=pytest.mark.repeated(times=c.get("repeat", 100), threshold=c.get("threshold", 0))
+        )
+        for c in EVALUATION_CASES
+    ],
+    ids=[c["id"] for c in EVALUATION_CASES]
 )
 @pytest.mark.parametrize("provider", PROVIDERS, ids=lambda x: x["model"] + (' on ' + x["api_base"] if x.get("api_base") else ''))
-@pytest.mark.repeated(times=10, threshold=1)
 def test_extract_calories(id, steps, provider):
     register_heif_opener()
 
@@ -275,56 +295,3 @@ def test_extract_calories(id, steps, provider):
                 expect_approx_pct(actual, expectation)
             else:
                 raise ValueError(f"Unknown expectation type: {expectation['type']}")
-
-
-
-# @pytest.mark.parametrize("provider", PROVIDERS, ids=lambda x: x["model"] + (' on ' + x["api_base"] if x.get("api_base") else ''))
-# @pytest.mark.repeated(times=100, threshold=1)
-# def test_nutrition_extraction(provider):
-#     register_heif_opener()
-
-#     image_filename = 'IMG_B768CE83-9FEC-461A-BE63-CDDF64EBEB58.jpeg'  # 180
-#     image_filename = 'IMG_3228.HEIC'  # 630
-#     image_filename = 'IMG_3231.HEIC'  # 570
-#     image_format = image_filename.split('.')[-1].lower()
-#     with open(f'images/{image_filename}', "rb") as f:
-#         encoded_image = base64.b64encode(f.read()).decode("utf-8")
-
-#     prompt = """The image is the label of a packaged food product.
-#         Give me the number of calories per serving as integer.
-#         Do not print anything else, just the integer value.
-#         Do not include units like "calories" or "kcal".
-#         No explanation, do not write a complete sentence,
-#         please just write the integer value."""
-#     messages = [
-#         {
-#             "role": "user",
-#             "content": [
-#                 {
-#                     "type": "text",
-#                     "text": prompt
-#                 },
-#                 {
-#                     "type": "image_url",
-#                     "image_url": {
-#                         "url": f'data:image/{image_format};base64,' + encoded_image
-#                     }
-#                 }
-#             ]
-#         }
-#     ]
-#     kwargs = dict(
-#         model=provider["model"],
-#         messages=messages,
-#         api_key=provider.get("extra", {}).get("api_key"),
-#         max_tokens=64,
-#     )
-#     if provider.get("api_base"):
-#         kwargs["api_base"] = provider["api_base"]
-#     with warnings.catch_warnings():
-#         response = completion(**kwargs)
-
-#     actual = response.get('choices')[0].to_dict().get('message', {}).get('content').strip()
-#     print("Response:", actual)
-#     assert actual.strip() == "570"
-#     assert int(actual) == 570
