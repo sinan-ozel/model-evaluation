@@ -2,8 +2,8 @@ prompt_path: "../prompts/calories_label.md"
 repeat: 10
 threshold: 0
 cases:
-  - id: calories-label-180
-    repeat: 20
+  - id: calories-label-180-exact
+    repeat: 100
     threshold: 5
     steps:
       - input:
@@ -134,3 +134,103 @@ cases:
           - type: within_percentage
             value: 200
             tolerance_pct: 10
+
+  - id: calories-label-harvest-trail-mix-1-exact
+    repeat: 100
+    threshold: 0
+    steps:
+      - input:
+          prompt_path: "../prompts/calories_label.md"
+          image_path: "images/IMG_3236.HEIC"
+          max_tokens: 64
+        expectations:
+          - type: equals
+            value: "220"
+
+  - id: calories-label-chunky-supreme-granola-exact
+    repeat: 100
+    threshold: 0
+    steps:
+      - input:
+          image_path: "images/IMG_3228.HEIC"
+          max_tokens: 64
+        expectations:
+          - type: equals
+            value: "630"
+
+  - id: calories-label-maple-eh-granola-exact
+    repeat: 100
+    threshold: 0
+    steps:
+      - input:
+          image_path: "images/IMG_3231.HEIC"
+          max_tokens: 64
+        expectations:
+          - type: equals
+            value: "570"
+
+  - id: calories-label-hersheys-christmas-cookies-exact
+    repeat: 100
+    threshold: 0
+    steps:
+      - input:
+          image_path: "images/IMG_3276.HEIC"
+          max_tokens: 64
+        expectations:
+          - type: equals
+            value: "200"
+
+  - id: calories-label-mnm-mint-chocolate-candy-1-exact
+    repeat: 100
+    threshold: 0
+    steps:
+      - input:
+          image_path: "images/IMG_3279.HEIC"
+          max_tokens: 64
+        expectations:
+          - type: equals
+            value: "190"
+
+  - id: calories-label-hersheys-candy-cane-kisses-exact
+    repeat: 100
+    threshold: 0
+    steps:
+      - input:
+          image_path: "images/IMG_3280.HEIC"
+          max_tokens: 64
+        expectations:
+          - type: equals
+            value: "220"
+
+  - id: calories-label-milk-chocolate-christmas-balls-exact
+    repeat: 100
+    threshold: 0
+    steps:
+      - input:
+          image_path: "images/IMG_3282.HEIC"
+          max_tokens: 64
+        expectations:
+          - type: equals
+            value: "220"
+
+  - id: calories-label-jumbo-sour-sukkers-exact
+    repeat: 100
+    threshold: 0
+    steps:
+      - input:
+          image_path: "images/IMG_3286.HEIC"
+          max_tokens: 64
+        expectations:
+          - type: equals
+            value: "150"
+
+  - id: calories-label-quality-street-exact
+    repeat: 100
+    threshold: 0
+    steps:
+      - input:
+          image_path: "images/IMG_3288.HEIC"
+          max_tokens: 64
+        expectations:
+          - type: equals
+            value: "200"

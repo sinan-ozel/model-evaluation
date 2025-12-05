@@ -1,4 +1,4 @@
-_enabled: true
+_enabled: false
 api_base: https://api.mistral.ai
 model: mistral/pixtral-12b-2409
 api_key: ${MISTRAL_API_KEY}
