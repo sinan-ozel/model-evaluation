@@ -16,89 +16,52 @@ from PIL import Image
 
 # Get the LLM providers from environment variables
 
-def raise_value_error_if_env_missing(prefix: str, example_model_str: str):
-    """Raises ValueError if either MODELS or API_KEY env vars are missing for a given provider."""
-    if os.getenv(f"{prefix}_MODELS") and not os.getenv(f"{prefix}_API_KEY"):
-        raise ValueError(f"If {prefix}_MODELS is set, {prefix}_API_KEY must also be set."
-                        f" Example: {example_model_str}")
-    if os.getenv(f"{prefix}_API_KEY") and not os.getenv(f"{prefix}_MODELS"):
-        raise ValueError(f"If {prefix}_API_KEY is set, {prefix}_MODELS must also be set."
-                        f" Example: {example_model_str}")
 
-
+# Load providers from YAML files in the providers directory
 PROVIDERS = []
 
-# ------------------ Ollama ------------------
-OLLAMA_EXAMPLE = "OLLAMA_URL=http://localhost:11434; OLLAMA_MODELS=ollama/llava:7b,ollama/llava:13b"
-OLLAMA_URL = os.getenv("OLLAMA_URL")
-OLLAMA_MODELS = os.getenv("OLLAMA_MODELS")
-if OLLAMA_MODELS and not OLLAMA_URL:
-    raise ValueError("If OLLAMA_MODELS is set, OLLAMA_URL must also be set."
-                     f" Example: {OLLAMA_EXAMPLE}")
-if OLLAMA_URL:
-    if not OLLAMA_MODELS:
-        raise ValueError("If OLLAMA_URL is set, OLLAMA_MODELS must also be set."
-                         f" Example: {OLLAMA_EXAMPLE}")
-    for model in OLLAMA_MODELS.split(","):
-        PROVIDERS.append(
-            {
-                "model": model,
-                "api_base": OLLAMA_URL,
-                "extra": {}
-            }
-        )
+PROVIDERS_DIR = Path("/providers")
 
-# ------------------ Mistral ------------------
-MISTRAL_EXAMPLE = "MISTRAL_API_KEY=<your_key>; MISTRAL_MODELS=mistral/pixtral-12b-2409"
-MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
-MISTRAL_MODELS = os.getenv("MISTRAL_MODELS")
-if MISTRAL_MODELS and not MISTRAL_API_KEY:
-    raise ValueError("If MISTRAL_MODELS is set, MISTRAL_API_KEY must also be set."
-                     f" Example: {MISTRAL_EXAMPLE}")
-if MISTRAL_API_KEY:
-    if not MISTRAL_MODELS:
-        raise ValueError(
-            "If MISTRAL_API_KEY is set, MISTRAL_MODELS must also be set."
-            f" Example: {MISTRAL_EXAMPLE}"
-        )
-    for model in MISTRAL_MODELS.split(","):
-        PROVIDERS.append({
-            "model": model,
-            "api_base": "https://api.mistral.ai",
-            "extra": {"api_key": MISTRAL_API_KEY}
-        })
+def substitute_env_vars(obj: Any) -> Any:
+    """Recursively substitute ${VAR_NAME} with environment variable values."""
+    if isinstance(obj, str):
+        # Replace ${VAR_NAME} with environment variable
+        import re
+        def replace_var(match):
+            var_name = match.group(1)
+            return os.getenv(var_name, match.group(0))
+        return re.sub(r'\$\{([A-Za-z_][A-Za-z0-9_]*)\}', replace_var, obj)
+    elif isinstance(obj, dict):
+        return {k: substitute_env_vars(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [substitute_env_vars(item) for item in obj]
+    return obj
 
-# ------------------ Anthropic (Claude) ------------------
-ANTHROPIC_EXAMPLE = "ANTHROPIC_API_KEY=<your_key>; ANTHROPIC_MODELS=claude-sonnet-4-5-20250929"
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
-ANTHROPIC_MODELS = os.getenv("ANTHROPIC_MODELS")
-if ANTHROPIC_MODELS and not ANTHROPIC_API_KEY:
-    raise ValueError("If ANTHROPIC_MODELS is set, ANTHROPIC_API_KEY must also be set."
-                     f" Example: {ANTHROPIC_EXAMPLE}")
-if ANTHROPIC_API_KEY:
-    if not ANTHROPIC_MODELS:
-        raise ValueError(
-            "If ANTHROPIC_API_KEY is set, ANTHROPIC_MODELS must also be set."
-            f" Example: {ANTHROPIC_EXAMPLE}"
-        )
-    for model in ANTHROPIC_MODELS.split(","):
-        PROVIDERS.append({
-            "model": model,
-            "api_base": "https://api.anthropic.com",
-            "extra": {"api_key": ANTHROPIC_API_KEY}
-        })
+# Load provider YAML files
+for provider_file in sorted(PROVIDERS_DIR.glob("*.yaml")):
+    with open(provider_file, "r") as f:
+        provider_config = yaml.safe_load(f)
 
-# ------------------ Hugging Face ------------------
-raise_value_error_if_env_missing("HF", "HF_API_KEY=<your_key>; HF_MODELS=microsoft/Phi-3-vision-128k-instruct")
+    # Substitute environment variables
+    provider_config = substitute_env_vars(provider_config)
 
-HF_API_KEY = os.getenv("HF_API_KEY")
-if HF_API_KEY:
-    for model in os.getenv("HF_MODELS").split(","):
-        PROVIDERS.append({
-            "model": model.strip(),
-            "extra": {"api_key": HF_API_KEY}
-        })
+    # Skip disabled providers
+    if not provider_config.get("_enabled", True):
+        print(f"Skipping disabled provider: {provider_file.name}")
+        continue
 
+    # Ensure the provider has required fields
+    if "model" not in provider_config:
+        raise ValueError(f"Provider {provider_file.name} missing 'model' field")
+
+    # Initialize extra dict if not present
+    if "extra" not in provider_config:
+        provider_config["extra"] = {}
+
+    # Remove _enabled before adding to PROVIDERS (it's not a LiteLLM kwarg)
+    provider_config.pop("_enabled", None)
+
+    PROVIDERS.append(provider_config)
 
 # Retrieve the evaluations cases from a YAML file
 
@@ -265,15 +228,12 @@ def test_extract_calories(id, steps, provider):
                 "content": message_content
             }
         ]
-        kwargs = dict(
-            model=provider["model"],
-            messages=messages,
-            api_key=provider.get("extra", {}).get("api_key"),
-        )
-        if provider.get("api_base"):
-            kwargs["api_base"] = provider["api_base"]
-        if max_tokens:
-            kwargs["max_tokens"] = max_tokens
+        kwargs = {}
+        allowed_keys = ['model', 'api_base', 'api_key', 'max_tokens']
+        for key in allowed_keys:
+            if provider.get(key):
+                kwargs[key] = provider[key]
+        kwargs["messages"] = messages
 
         with warnings.catch_warnings():
             response = completion(**kwargs)
