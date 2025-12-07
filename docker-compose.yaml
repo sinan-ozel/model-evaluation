@@ -27,7 +27,8 @@ services:
       - MISTRAL_API_KEY=${MISTRAL_API_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - HF_API_KEY=${HF_API_KEY}
-      - EVALUATION_PATH=${EVALUATION_PATH:-nutrition_information_extraction/evaluation}
+      - PROJECT_PATH=/${PROJECT_PATH}
+      - EVALUATION_PATH=${EVALUATION_PATH:-evaluation}
     depends_on:
       # - llm
       - embedding
@@ -35,10 +36,7 @@ services:
       - nutrition-information-extraction-evaluation
     tty: true
     volumes:
-      - ./tests:/tests
-      - ./providers:/providers
-      - ./prompts:/prompts
-      - ./evaluation:/evaluation
+      - ./${PROJECT_PATH}:/${PROJECT_PATH}
     command: ["pytest", "--disable-warnings", "-v", "--full-trace", "-rs", "--maxfail=1"]
 
 networks:

@@ -20,7 +20,21 @@ from PIL import Image
 # Load providers from YAML files in the providers directory
 PROVIDERS = []
 
-PROVIDERS_DIR = Path("/providers")
+# Get PROJECT_PATH from environment (required)
+PROJECT_PATH_STR = os.getenv('PROJECT_PATH')
+if not PROJECT_PATH_STR:
+    raise RuntimeError("PROJECT_PATH environment variable is required")
+PROJECT_PATH = Path(PROJECT_PATH_STR)
+if not PROJECT_PATH.exists():
+    raise RuntimeError(f"PROJECT_PATH does not exist: {PROJECT_PATH}")
+
+PROVIDERS_DIR = PROJECT_PATH / "providers"
+if not PROVIDERS_DIR.exists():
+    raise RuntimeError(f"Providers directory not found: {PROVIDERS_DIR}")
+
+PROMPT_FOLDER = PROJECT_PATH / "prompts"
+RESULTS_DIR = PROJECT_PATH / "results"
+RESULTS_DIR.mkdir(exist_ok=True)
 
 def substitute_env_vars(obj: Any) -> Any:
     """Recursively substitute ${VAR_NAME} with environment variable values."""
@@ -63,19 +77,19 @@ for provider_file in sorted(PROVIDERS_DIR.glob("*.yaml")):
 
     PROVIDERS.append(provider_config)
 
-# Retrieve the evaluations cases from a YAML file
-
-PROMPT_FOLDER = Path(__file__).resolve().parents[1] / "prompts"
-
 # -------- YAML loader / parser (multi-step format) ----------
 def load_evaluation_cases() -> List[Dict[str, Any]]:
     # Get evaluation path from environment variable or use default
-    evaluation_path_str = os.getenv('EVALUATION_PATH', '/evaluation')
-    evaluation_path = Path(evaluation_path_str)
+    evaluation_path_str = os.getenv('EVALUATION_PATH', 'evaluation')
     
+    # If EVALUATION_PATH is relative, make it relative to PROJECT_PATH
+    evaluation_path = Path(evaluation_path_str)
+    if not evaluation_path.is_absolute():
+        evaluation_path = PROJECT_PATH / evaluation_path
+
     if not evaluation_path.exists():
         raise RuntimeError(f"Evaluation path not found: {evaluation_path}")
-    
+
     # If it's a file, load just that file
     if evaluation_path.is_file():
         if not evaluation_path.suffix == '.yaml':
@@ -84,7 +98,7 @@ def load_evaluation_cases() -> List[Dict[str, Any]]:
     else:
         # If it's a directory, find all YAML files recursively
         yaml_files = sorted(evaluation_path.glob("**/*.yaml"))
-    
+
     if not yaml_files:
         raise RuntimeError(f"No YAML files found in: {evaluation_path}")
 
@@ -92,6 +106,9 @@ def load_evaluation_cases() -> List[Dict[str, Any]]:
     for yaml_file in yaml_files:
         with open(yaml_file, "r") as f:
             data = yaml.safe_load(f)
+
+        # Base directory for resolving relative paths in this YAML file
+        yaml_dir = yaml_file.parent
 
         top_level_prompt = data.get('prompt')
         top_level_prompt_path = data.get('prompt_path')
@@ -126,9 +143,10 @@ def load_evaluation_cases() -> List[Dict[str, Any]]:
                     raise ValueError(f"Test '{test_id}', step {idx}: prompt_path must point to a .md file.")
                 image_url = None
                 if img_path:
-                    p = evaluation_path.parent / Path(img_path) if evaluation_path.is_file() else evaluation_path / Path(img_path)
+                    # Resolve image path relative to the YAML file's directory
+                    p = yaml_dir / Path(img_path)
                     if not p.exists():
-                        raise FileNotFoundError(f"Image not found: {img_path}")
+                        raise FileNotFoundError(f"Image not found: {img_path} (resolved to {p})")
                     img_bytes = p.read_bytes()
                     fmt = img_path.split(".")[-1].lower()
                     b64 = base64.b64encode(img_bytes).decode("utf-8")
@@ -139,7 +157,7 @@ def load_evaluation_cases() -> List[Dict[str, Any]]:
                         "text": prompt
                     })
                 if prompt_path:
-                    p = Path(PROMPT_FOLDER) / prompt_path
+                    p = PROMPT_FOLDER / prompt_path
                     if not p.exists():
                         raise FileNotFoundError(f"Prompt file not found: {prompt_path}")
                     prompt = p.read_text()
