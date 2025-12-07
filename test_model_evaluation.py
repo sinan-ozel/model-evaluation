@@ -73,7 +73,7 @@ def load_evaluation_cases() -> List[Dict[str, Any]]:
     if not folder_path.exists() or not folder_path.is_dir():
         raise RuntimeError(f"Folder not found: {folder}")
 
-    for path in folder_path.glob("*.yaml"):
+    for path in folder_path.glob("**/*.yaml"):
         with open(path, "r") as f:
             data = yaml.safe_load(f)
 
