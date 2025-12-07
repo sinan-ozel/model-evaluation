@@ -81,7 +81,7 @@ for provider_file in sorted(PROVIDERS_DIR.glob("*.yaml")):
 def load_evaluation_cases() -> List[Dict[str, Any]]:
     # Get evaluation path from environment variable or use default
     evaluation_path_str = os.getenv('EVALUATION_PATH', 'evaluation')
-    
+
     # If EVALUATION_PATH is relative, make it relative to PROJECT_PATH
     evaluation_path = Path(evaluation_path_str)
     if not evaluation_path.is_absolute():

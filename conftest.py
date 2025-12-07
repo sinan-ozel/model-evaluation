@@ -2,6 +2,7 @@ import pytest
 from pathlib import Path
 from collections import defaultdict
 from datetime import datetime
+import os
 
 # Global dictionary to collect test results
 TEST_RESULTS = defaultdict(lambda: defaultdict(dict))
@@ -36,7 +37,8 @@ def pytest_sessionfinish(session, exitstatus):
     print(f"\n[DEBUG] Session finishing. TEST_RESULTS has {len(TEST_RESULTS)} test cases")
 
     # Create results directory and timestamped filename
-    results_dir = Path("/tests/results")
+    project_path = os.getenv('PROJECT_PATH', '/nutrition_information_extraction')
+    results_dir = Path(project_path) / "results"
     results_dir.mkdir(parents=True, exist_ok=True)
 
     now = datetime.now()

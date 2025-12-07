@@ -1,3 +1,3 @@
-_enabled: true
+_enabled: false
 api_base: http://a03cccf0e50c1466f8bc71a23461637d-1841174953.ca-central-1.elb.amazonaws.com/minicpm-v/8b
 model: ollama/minicpm-v:8b
