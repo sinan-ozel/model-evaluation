@@ -17,11 +17,11 @@ services:
   embedding:
     image: sinanozel/ollama.0.12.2:all-minilm-33m
     networks:
-      - nutrition-information-extraction-evaluation
+      - model-evaluation
 
   evaluator:
     build:
-      context: ..
+      context: .
       dockerfile: Dockerfile
     environment:
       - MISTRAL_API_KEY=${MISTRAL_API_KEY}
@@ -33,12 +33,14 @@ services:
       # - llm
       - embedding
     networks:
-      - nutrition-information-extraction-evaluation
+      - model-evaluation
     tty: true
     volumes:
       - ./${PROJECT_PATH}:/${PROJECT_PATH}
-    command: ["pytest", "--disable-warnings", "-v", "--full-trace", "-rs", "--maxfail=1"]
+      - ./test_model_evaluation.py:/test_model_evaluation.py
+      - ./conftest.py:/conftest.py
+    command: ["pytest", "/test_model_evaluation.py", "--disable-warnings", "-v", "--full-trace", "-rs", "--maxfail=1"]
 
 networks:
-  nutrition-information-extraction-evaluation:
+  model-evaluation:
     driver: bridge
