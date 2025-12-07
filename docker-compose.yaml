@@ -27,6 +27,7 @@ services:
       - MISTRAL_API_KEY=${MISTRAL_API_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - HF_API_KEY=${HF_API_KEY}
+      - EVALUATION_PATH=${EVALUATION_PATH:-nutrition_information_extraction/evaluation}
     depends_on:
       # - llm
       - embedding

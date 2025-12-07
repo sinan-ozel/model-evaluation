@@ -69,86 +69,101 @@ PROMPT_FOLDER = Path(__file__).resolve().parents[1] / "prompts"
 
 # -------- YAML loader / parser (multi-step format) ----------
 def load_evaluation_cases() -> List[Dict[str, Any]]:
-    folder_path = Path('/evaluation')
-    if not folder_path.exists() or not folder_path.is_dir():
-        raise RuntimeError(f"Folder not found: {folder}")
-
-    for path in folder_path.glob("**/*.yaml"):
-        with open(path, "r") as f:
-            data = yaml.safe_load(f)
+    # Get evaluation path from environment variable or use default
+    evaluation_path_str = os.getenv('EVALUATION_PATH', '/evaluation')
+    evaluation_path = Path(evaluation_path_str)
+    
+    if not evaluation_path.exists():
+        raise RuntimeError(f"Evaluation path not found: {evaluation_path}")
+    
+    # If it's a file, load just that file
+    if evaluation_path.is_file():
+        if not evaluation_path.suffix == '.yaml':
+            raise ValueError(f"Evaluation file must be a YAML file: {evaluation_path}")
+        yaml_files = [evaluation_path]
+    else:
+        # If it's a directory, find all YAML files recursively
+        yaml_files = sorted(evaluation_path.glob("**/*.yaml"))
+    
+    if not yaml_files:
+        raise RuntimeError(f"No YAML files found in: {evaluation_path}")
 
     all_tests = []
-    top_level_prompt = data.get('prompt')
-    top_level_prompt_path = data.get('prompt_path')
-    if top_level_prompt and top_level_prompt_path:
-        raise ValueError(f"Cannot have both 'prompt' and 'prompt_path'."
-                         "Either write the prompt into the YAML file or provide a prompt file path.")
-    top_level_repeat = data.get("repeat", data.get("repeat"))
-    top_level_threshold = data.get("threshold", data.get("threshold"))
-    for test in data.get("cases", []):
-        test_id = test.get("id")
-        repeat = test.get("repeat", top_level_repeat)
-        threshold = test.get("threshold", top_level_threshold)
-        steps = test.get("steps", [])
-        if not test_id:
-            raise ValueError("Every test must have an 'id'.")
-        if not steps:
-            raise ValueError(f"Test '{test_id}' must contain at least one step.")
-        parsed_steps = []
-        for idx, step in enumerate(steps):
-            step_content = []
-            inp = step.get("input", {})
-            prompt = inp.get("prompt") or top_level_prompt
-            prompt_path = inp.get("prompt_path") or top_level_prompt_path
-            img_path = inp.get("image_path")
-            max_tokens = int(inp.get("max_tokens")) if inp.get("max_tokens") is not None else None
-            if not (prompt or prompt_path) and not img_path:
-                raise ValueError(f"Test '{test_id}', step {idx}: need text or image.")
-            if (prompt and not top_level_prompt) and (prompt_path and not top_level_prompt_path):
-                raise ValueError(f"Test '{test_id}', step {idx}: cannot have both 'prompt' and 'prompt_path'."
-                                 "Either write the prompt into the YAML file or provide a prompt file path.")
-            if prompt_path and not prompt_path.endswith('.md'):
-                raise ValueError(f"Test '{test_id}', step {idx}: prompt_path must point to a .md file.")
-            image_url = None
-            if img_path:
-                p = folder_path / Path(img_path)
-                if not p.exists():
-                    raise FileNotFoundError(f"Image not found: {img_path}")
-                img_bytes = p.read_bytes()
-                fmt = img_path.split(".")[-1].lower()
-                b64 = base64.b64encode(img_bytes).decode("utf-8")
-                image_url = f"data:image/{fmt};base64,{b64}"
-            if prompt:
-                step_content.append({
-                    "type": "text",
-                    "text": prompt
+    for yaml_file in yaml_files:
+        with open(yaml_file, "r") as f:
+            data = yaml.safe_load(f)
+
+        top_level_prompt = data.get('prompt')
+        top_level_prompt_path = data.get('prompt_path')
+        if top_level_prompt and top_level_prompt_path:
+            raise ValueError(f"Cannot have both 'prompt' and 'prompt_path'."
+                             "Either write the prompt into the YAML file or provide a prompt file path.")
+        top_level_repeat = data.get("repeat", data.get("repeat"))
+        top_level_threshold = data.get("threshold", data.get("threshold"))
+        for test in data.get("cases", []):
+            test_id = test.get("id")
+            repeat = test.get("repeat", top_level_repeat)
+            threshold = test.get("threshold", top_level_threshold)
+            steps = test.get("steps", [])
+            if not test_id:
+                raise ValueError("Every test must have an 'id'.")
+            if not steps:
+                raise ValueError(f"Test '{test_id}' must contain at least one step.")
+            parsed_steps = []
+            for idx, step in enumerate(steps):
+                step_content = []
+                inp = step.get("input", {})
+                prompt = inp.get("prompt") or top_level_prompt
+                prompt_path = inp.get("prompt_path") or top_level_prompt_path
+                img_path = inp.get("image_path")
+                max_tokens = int(inp.get("max_tokens")) if inp.get("max_tokens") is not None else None
+                if not (prompt or prompt_path) and not img_path:
+                    raise ValueError(f"Test '{test_id}', step {idx}: need text or image.")
+                if (prompt and not top_level_prompt) and (prompt_path and not top_level_prompt_path):
+                    raise ValueError(f"Test '{test_id}', step {idx}: cannot have both 'prompt' and 'prompt_path'."
+                                     "Either write the prompt into the YAML file or provide a prompt file path.")
+                if prompt_path and not prompt_path.endswith('.md'):
+                    raise ValueError(f"Test '{test_id}', step {idx}: prompt_path must point to a .md file.")
+                image_url = None
+                if img_path:
+                    p = evaluation_path.parent / Path(img_path) if evaluation_path.is_file() else evaluation_path / Path(img_path)
+                    if not p.exists():
+                        raise FileNotFoundError(f"Image not found: {img_path}")
+                    img_bytes = p.read_bytes()
+                    fmt = img_path.split(".")[-1].lower()
+                    b64 = base64.b64encode(img_bytes).decode("utf-8")
+                    image_url = f"data:image/{fmt};base64,{b64}"
+                if prompt:
+                    step_content.append({
+                        "type": "text",
+                        "text": prompt
+                    })
+                if prompt_path:
+                    p = Path(PROMPT_FOLDER) / prompt_path
+                    if not p.exists():
+                        raise FileNotFoundError(f"Prompt file not found: {prompt_path}")
+                    prompt = p.read_text()
+                    step_content.append({
+                        "type": "text",
+                        "text": prompt
+                    })
+                if image_url:
+                    step_content.append({
+                        "type": "image_url",
+                        "image_url": {
+                            "url": image_url
+                        }
+                    })
+                expectations = step.get("expectations", [])
+                parsed_steps.append({
+                    "content": step_content,
+                    "max_tokens": max_tokens,
+                    "expectations": expectations,
                 })
-            if prompt_path:
-                p = Path(PROMPT_FOLDER) / prompt_path
-                if not p.exists():
-                    raise FileNotFoundError(f"Prompt file not found: {prompt_path}")
-                prompt = p.read_text()
-                step_content.append({
-                    "type": "text",
-                    "text": prompt
-                })
-            if image_url:
-                step_content.append({
-                    "type": "image_url",
-                    "image_url": {
-                        "url": image_url
-                    }
-                })
-            expectations = step.get("expectations", [])
-            parsed_steps.append({
-                "content": step_content,
-                "max_tokens": max_tokens,
-                "expectations": expectations,
-            })
-        all_tests.append({"id": test_id,
-                          "repeat": repeat,
-                          "threshold": threshold,
-                          "steps": parsed_steps})
+            all_tests.append({"id": test_id,
+                              "repeat": repeat,
+                              "threshold": threshold,
+                              "steps": parsed_steps})
     return all_tests
 
 
