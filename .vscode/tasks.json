@@ -19,6 +19,25 @@
         "kind": "test",
         "isDefault": true
       }
+    },
+    {
+      "label": "evaluate_nutrition_ocr",
+      "type": "shell",
+      "command": "docker",
+      "args": [
+        "compose",
+        "-f", "${workspaceFolder}/nutrition_ocr/docker-compose.yaml",
+        "--project-directory", "${workspaceFolder}/nutrition_ocr",
+        "up",
+        "--build",
+        "--abort-on-container-exit",
+        "--exit-code-from", "evaluator"
+      ],
+      "problemMatcher": [],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      }
     }
   ]
 }

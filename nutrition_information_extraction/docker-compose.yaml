@@ -1,18 +1,18 @@
 services:
 
-  llm:
-    image: sinanozel/ollama.0.12.2:llava-7b
-    ports:
-      - "11434:11434"
-    networks:
-      - nutrition-information-extraction-evaluation
-    deploy:
-      resources:
-        reservations:
-          devices:
-          - driver: nvidia
-            capabilities: ["gpu"]
-            count: all
+  # llm:
+  #   image: sinanozel/ollama.0.12.2:llava-7b
+  #   ports:
+  #     - "11434:11434"
+  #   networks:
+  #     - nutrition-information-extraction-evaluation
+  #   deploy:
+  #     resources:
+  #       reservations:
+  #         devices:
+  #         - driver: nvidia
+  #           capabilities: ["gpu"]
+  #           count: all
 
   embedding:
     image: sinanozel/ollama.0.12.2:all-minilm-33m
@@ -38,7 +38,7 @@ services:
       - ./providers:/providers
       - ./prompts:/prompts
       - ./evaluation:/evaluation
-    command: ["pytest", "--disable-warnings", "-vvv", "--full-trace", "-rs", "--maxfail=1"]
+    command: ["pytest", "--disable-warnings", "-v", "--full-trace", "-rs", "--maxfail=1"]
 
 networks:
   nutrition-information-extraction-evaluation:
