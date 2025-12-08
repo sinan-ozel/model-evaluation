@@ -37,13 +37,40 @@ def convert_image_to_jpeg_base64(image_path: Path, quality: int = 60) -> str:
     return f"data:image/jpeg;base64,{b64}"
 
 
-def expect_equality(actual: Union[str, dict], spec: Dict[str, Any]) -> None:
+def expect_equality(actual: Union[str, dict, int, float, None], spec: Dict[str, Any]) -> None:
     """
     Check if output equals expected value.
+    Supports dict, str, int, float, and None types.
+    For dict comparison, compares only non-None values in expected dict,
+    but actual must not have extra keys beyond what's in expected.
     Raises AssertionError if not equal.
     """
     expected = spec["value"]
-    if actual != expected:
+
+    # Handle dict comparison - only check non-None values in expected
+    if isinstance(expected, dict) and isinstance(actual, dict):
+        # Check for extra keys in actual
+        expected_keys = set(expected.keys())
+        actual_keys = set(actual.keys())
+        extra_keys = actual_keys - expected_keys
+        if extra_keys:
+            raise AssertionError(
+                f"equality failed: actual has extra keys {extra_keys}"
+            )
+
+        # Check each expected key
+        for key, expected_value in expected.items():
+            if expected_value is not None:
+                if key not in actual:
+                    raise AssertionError(
+                        f"equality failed for key '{key}': key missing in actual"
+                    )
+                actual_value = actual[key]
+                if actual_value != expected_value:
+                    raise AssertionError(
+                        f"equality failed for key '{key}': output='{actual_value}', expected='{expected_value}'"
+                    )
+    elif actual != expected:
         raise AssertionError(
             f"equality failed: output='{actual}', expected='{expected}'"
         )

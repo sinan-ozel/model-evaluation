@@ -46,6 +46,22 @@ class TestExpectEquality:
         """Should pass when actual equals expected dict value."""
         expect_equality({"a": 1, "b": 2}, {"value": {"b": 2, "a": 1}})
 
+    def test_equality_fails_with_dict_if_key_missing(self):
+        """Should raise AssertionError when keys are missing."""
+        with pytest.raises(AssertionError, match="equality failed"):
+            expect_equality({"a": 1}, {"value": {"a": 1, "b": 2}})
+
+    def test_equality_fails_with_dict_if_extra_key(self):
+        """Should raise AssertionError when keys are missing."""
+        with pytest.raises(AssertionError, match="equality failed"):
+            expect_equality({"a": 1, "b": 2}, {"value": {"a": 1}})
+
+    def test_equality_fails_with_dict_first_is_string(self):
+        """Should raise AssertionError when keys are missing."""
+        with pytest.raises(AssertionError, match="equality failed"):
+            expect_equality('{"a": 1}', {"value": {"a": 1}})
+
+
 
 class TestExpectInRange:
     """Test the expect_in_range function."""

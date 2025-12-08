@@ -3,6 +3,7 @@ import warnings
 from typing import Any, Dict, List
 import re
 import yaml
+import json
 from pathlib import Path
 
 import pytest
@@ -226,11 +227,22 @@ def test_extract_calories(id, steps, provider):
 
         actual = response.get('choices')[0].to_dict().get('message', {}).get('content').strip()
 
+        # Try to parse as JSON if the expectation value is a dict
+        actual_parsed = actual
+        for expectation in expectations:
+            if isinstance(expectation.get("value"), dict):
+                try:
+                    actual_parsed = json.loads(actual)
+                except (json.JSONDecodeError, ValueError):
+                    # If parsing fails, keep as string
+                    pass
+                break
+
         for expectation in expectations:
             if expectation["type"] == "contains":
                 assert expectation["value"] in actual, f"Expectation failed: response does not contain '{expectation['value']}'"
             elif expectation["type"] == "equals":
-                expect_equality(actual, expectation)
+                expect_equality(actual_parsed, expectation)
             elif expectation["type"] in {"regex", "regexp", "regular_expression", "match"}:
                 if not re.search(expectation["value"], actual):
                     raise AssertionError(f"Expectation failed: response '{actual}' does not match regex '{expectation['value']}'")
