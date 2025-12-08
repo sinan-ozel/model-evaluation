@@ -1,8 +1,6 @@
 import os
-import base64
 import warnings
-import io
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List
 import re
 import yaml
 from pathlib import Path
@@ -10,36 +8,12 @@ from pathlib import Path
 import pytest
 
 from litellm import completion
-from pillow_heif import register_heif_opener
-from PIL import Image
-
-# Register HEIF opener for PIL
-register_heif_opener()
-
-
-def convert_image_to_jpeg_base64(image_path: Path, quality: int = 60) -> str:
-    """
-    Open an image, convert to RGB if needed, encode as JPEG, and return base64 data URL.
-
-    Args:
-        image_path: Path to the image file
-        quality: JPEG quality (1-100)
-
-    Returns:
-        Base64-encoded data URL string (data:image/jpeg;base64,...)
-    """
-    img = Image.open(image_path)
-    if img.mode != 'RGB':
-        img = img.convert('RGB')
-
-    # Encode to JPEG in memory
-    img_bytes_io = io.BytesIO()
-    img.save(img_bytes_io, format='JPEG', quality=quality)
-    img_bytes_io.seek(0)
-    img_bytes = img_bytes_io.read()
-
-    b64 = base64.b64encode(img_bytes).decode("utf-8")
-    return f"data:image/jpeg;base64,{b64}"
+from helpers.evaluation_helpers import (
+    convert_image_to_jpeg_base64,
+    expect_equality,
+    expect_in_range,
+    expect_approx_pct
+)
 
 
 # Get the LLM providers from environment variables
@@ -212,50 +186,6 @@ def load_evaluation_cases() -> List[Dict[str, Any]]:
     return all_tests
 
 
-def expect_approx_pct(output: Union[str, int, float], spec: Dict[str, Any]) -> None:
-    """
-    Check if output is approximately equal to spec['value'] within spec['tolerance_pct'] percent.
-    Note that output, spec['value'], and spec['tolerance_pct'] can be strings, but are converted to float for comparison.
-    Raises AssertionError if not within range.
-    """
-    value = float(spec["value"])
-    tol_pct = float(spec["tolerance_pct"])
-
-    v = float(output)
-    lower = value * (1 - tol_pct / 100.0)
-    upper = value * (1 + tol_pct / 100.0)
-
-    if not (lower <= v <= upper):
-        raise AssertionError(
-            f"approx_pct failed: output={v}, expected≈{value} ±{tol_pct}%, range=({lower}, {upper})"
-        )
-
-
-def expect_in_range(actual: Union[str, int, float], spec: Dict[str, Any]) -> None:
-    """
-    Check if output is within the range specified by spec['min'] and spec['max'].
-    Note that output, spec['min'], and spec['max'] can be strings, but are converted to float for comparison.
-    Raises AssertionError if not within range.
-    """
-    v = float(actual)
-    lo = float(spec["min"])
-    hi = float(spec["max"])
-
-    if not (lo <= v <= hi):
-        raise AssertionError(
-            f"in_range failed: output={v}, expected between {lo} and {hi}"
-        )
-
-
-def expect_equality(actual: Union[str, dict], spec: Dict[str, Any]) -> None:
-    expected = spec["value"]
-    if actual != expected:
-        raise AssertionError(
-            f"equality failed: output='{actual}', expected='{expected}'"
-        )
-
-
-
 EVALUATION_CASES = load_evaluation_cases()
 
 
@@ -272,8 +202,6 @@ EVALUATION_CASES = load_evaluation_cases()
 )
 @pytest.mark.parametrize("provider", PROVIDERS, ids=lambda x: x["model"] + (' on ' + x["api_base"] if x.get("api_base") else ''))
 def test_extract_calories(id, steps, provider):
-    register_heif_opener()
-
     for step in steps:
         # TODO: Add support for multi-turn evaluation cases for models. (might do this, or implement it in agents)
         message_content = step["content"]
