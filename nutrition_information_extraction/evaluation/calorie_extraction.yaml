@@ -1,0 +1,121 @@
+prompt_path: "../prompts/calories_label.md"
+repeat: 50
+threshold: 0
+cases:
+  - id: calories-label-180
+    steps:
+      - input:
+          image_path: "images/IMG_B768CE83-9FEC-461A-BE63-CDDF64EBEB58.jpeg"
+          max_tokens: 64
+        expectations:
+          - type: equals
+            value: "180"
+
+  - id: calories-label-harvest-trail-mix-1
+    steps:
+      - input:
+          image_path: "images/IMG_3236.HEIC"
+          max_tokens: 64
+        expectations:
+          - type: equals
+            value: "220"
+
+  - id: calories-label-chunky-supreme-granola-exact
+    steps:
+      - input:
+          image_path: "images/IMG_3228.HEIC"
+          max_tokens: 64
+        expectations:
+          - type: equals
+            value: "630"
+
+  - id: calories-label-maple-eh-granola-exact
+    steps:
+      - input:
+          image_path: "images/IMG_3231.HEIC"
+          max_tokens: 64
+        expectations:
+          - type: equals
+            value: "570"
+
+  - id: calories-label-harvest-trail-mix-2
+    steps:
+      - input:
+          image_path: "images/IMG_3232.HEIC"
+          max_tokens: 64
+        expectations:
+          - type: equals
+            value: "220"
+
+  - id: calories-label-harvest-trail-mix-3
+    steps:
+      - input:
+          image_path: "images/IMG_3237.HEIC"
+          max_tokens: 64
+        expectations:
+          - type: equals
+            value: "220"
+
+  - id: calories-label-hersheys-christmas-cookies-exact
+    steps:
+      - input:
+          image_path: "images/IMG_3276.HEIC"
+          max_tokens: 64
+        expectations:
+          - type: equals
+            value: "200"
+
+
+  - id: calories-label-mnm-mint-chocolate-candy-1
+    steps:
+      - input:
+          image_path: "images/IMG_3279.HEIC"
+          max_tokens: 64
+        expectations:
+          - type: equals
+            value: "190"
+
+  - id: calories-label-hersheys-candy-cane-kisses
+    steps:
+      - input:
+          image_path: "images/IMG_3280.HEIC"
+          max_tokens: 64
+        expectations:
+          - type: equals
+            value: "220"
+
+  - id: calories-label-milk-chocolate-christmas-balls
+    steps:
+      - input:
+          image_path: "images/IMG_3282.HEIC"
+          max_tokens: 64
+        expectations:
+          - type: equals
+            value: "200"
+
+  - id: calories-label-mnm-mint-chocolate-candy-2
+    steps:
+      - input:
+          image_path: "images/IMG_3284.HEIC"
+          max_tokens: 64
+        expectations:
+          - type: equals
+            value: "190"
+
+  - id: calories-label-jumbo-sour-sukkers
+    steps:
+      - input:
+          image_path: "images/IMG_3286.HEIC"
+          max_tokens: 64
+        expectations:
+          - type: equals
+            value: "150"
+
+  - id: calories-label-quality-street
+    steps:
+      - input:
+          image_path: "images/IMG_3288.HEIC"
+          max_tokens: 64
+        expectations:
+          - type: equals
+            value: "200"
