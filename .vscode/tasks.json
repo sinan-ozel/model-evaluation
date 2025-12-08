@@ -16,7 +16,7 @@
       }
     },
     {
-      "label": "test_functions",
+      "label": "test_helpers",
       "type": "shell",
       "command": "docker",
       "args": [
@@ -29,7 +29,7 @@
         "--build",
         "--abort-on-container-exit",
         "--exit-code-from",
-        "tester"
+        "test-helpers"
       ],
       "problemMatcher": [],
       "group": {
