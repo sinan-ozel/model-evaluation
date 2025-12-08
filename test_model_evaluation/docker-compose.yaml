@@ -1,0 +1,12 @@
+services:
+  test-helpers:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    environment:
+      - PROJECT_PATH=TEST
+    volumes:
+      - ../helpers:/helpers
+      - ./test_helpers.py:/tests/test_model_evaluation/test_helpers.py
+    command: bash -c "mkdir -p /tests/TEST/providers /tests/TEST/prompts /tests/TEST/results && pytest -vv test_model_evaluation/"
+    working_dir: /tests
