@@ -37,6 +37,15 @@ class TestExpectEquality:
         with pytest.raises(AssertionError, match="equality failed"):
             expect_equality("180", {"value": 180})
 
+    def test_equality_fails_with_dict(self):
+        """Should raise AssertionError when types don't match."""
+        with pytest.raises(AssertionError, match="equality failed"):
+            expect_equality({"a": 1}, {"value": {"a": 2}})
+
+    def test_equality_passes_with_matching_dicts_with_different_sortinf(self):
+        """Should pass when actual equals expected dict value."""
+        expect_equality({"a": 1, "b": 2}, {"value": {"b": 2, "a": 1}})
+
 
 class TestExpectInRange:
     """Test the expect_in_range function."""
