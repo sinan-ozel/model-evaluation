@@ -1,8 +1,8 @@
 import os
 import base64
 import warnings
-from textwrap import dedent
-from typing import Any, Dict, List
+import io
+from typing import Any, Dict, List, Union
 import re
 import yaml
 from pathlib import Path
@@ -12,6 +12,34 @@ import pytest
 from litellm import completion
 from pillow_heif import register_heif_opener
 from PIL import Image
+
+# Register HEIF opener for PIL
+register_heif_opener()
+
+
+def convert_image_to_jpeg_base64(image_path: Path, quality: int = 60) -> str:
+    """
+    Open an image, convert to RGB if needed, encode as JPEG, and return base64 data URL.
+
+    Args:
+        image_path: Path to the image file
+        quality: JPEG quality (1-100)
+
+    Returns:
+        Base64-encoded data URL string (data:image/jpeg;base64,...)
+    """
+    img = Image.open(image_path)
+    if img.mode != 'RGB':
+        img = img.convert('RGB')
+
+    # Encode to JPEG in memory
+    img_bytes_io = io.BytesIO()
+    img.save(img_bytes_io, format='JPEG', quality=quality)
+    img_bytes_io.seek(0)
+    img_bytes = img_bytes_io.read()
+
+    b64 = base64.b64encode(img_bytes).decode("utf-8")
+    return f"data:image/jpeg;base64,{b64}"
 
 
 # Get the LLM providers from environment variables
@@ -35,6 +63,7 @@ if not PROVIDERS_DIR.exists():
 PROMPT_FOLDER = PROJECT_PATH / "prompts"
 RESULTS_DIR = PROJECT_PATH / "results"
 RESULTS_DIR.mkdir(exist_ok=True)
+
 
 def substitute_env_vars(obj: Any) -> Any:
     """Recursively substitute ${VAR_NAME} with environment variable values."""
@@ -61,7 +90,6 @@ for provider_file in sorted(PROVIDERS_DIR.glob("*.yaml")):
 
     # Skip disabled providers
     if not provider_config.get("_enabled", True):
-        print(f"Skipping disabled provider: {provider_file.name}")
         continue
 
     # Ensure the provider has required fields
@@ -147,10 +175,9 @@ def load_evaluation_cases() -> List[Dict[str, Any]]:
                     p = yaml_dir / Path(img_path)
                     if not p.exists():
                         raise FileNotFoundError(f"Image not found: {img_path} (resolved to {p})")
-                    img_bytes = p.read_bytes()
-                    fmt = img_path.split(".")[-1].lower()
-                    b64 = base64.b64encode(img_bytes).decode("utf-8")
-                    image_url = f"data:image/{fmt};base64,{b64}"
+
+                    image_url = convert_image_to_jpeg_base64(p, quality=60)
+
                 if prompt:
                     step_content.append({
                         "type": "text",
@@ -185,7 +212,12 @@ def load_evaluation_cases() -> List[Dict[str, Any]]:
     return all_tests
 
 
-def expect_approx_pct(output: str, spec: Dict[str, Any]) -> None:
+def expect_approx_pct(output: Union[str, int, float], spec: Dict[str, Any]) -> None:
+    """
+    Check if output is approximately equal to spec['value'] within spec['tolerance_pct'] percent.
+    Note that output, spec['value'], and spec['tolerance_pct'] can be strings, but are converted to float for comparison.
+    Raises AssertionError if not within range.
+    """
     value = float(spec["value"])
     tol_pct = float(spec["tolerance_pct"])
 
@@ -199,7 +231,12 @@ def expect_approx_pct(output: str, spec: Dict[str, Any]) -> None:
         )
 
 
-def expect_in_range(actual: str, spec: Dict[str, Any]) -> None:
+def expect_in_range(actual: Union[str, int, float], spec: Dict[str, Any]) -> None:
+    """
+    Check if output is within the range specified by spec['min'] and spec['max'].
+    Note that output, spec['min'], and spec['max'] can be strings, but are converted to float for comparison.
+    Raises AssertionError if not within range.
+    """
     v = float(actual)
     lo = float(spec["min"])
     hi = float(spec["max"])
@@ -210,30 +247,18 @@ def expect_in_range(actual: str, spec: Dict[str, Any]) -> None:
         )
 
 
-def expect_approx_pct(actual: str, spec: Dict[str, Any]) -> None:
-    value = float(spec["value"])
-    tol_pct = float(spec["tolerance_pct"])
-
-    v = float(actual)
-    lower = value * (1 - tol_pct / 100.0)
-    upper = value * (1 + tol_pct / 100.0)
-
-    if not (lower <= v <= upper):
+def expect_equality(actual: Union[str, dict], spec: Dict[str, Any]) -> None:
+    expected = spec["value"]
+    if actual != expected:
         raise AssertionError(
-            f"approx_pct failed: output={v}, expected≈{value} ±{tol_pct}%, range=({lower}, {upper})"
+            f"equality failed: output='{actual}', expected='{expected}'"
         )
+
 
 
 EVALUATION_CASES = load_evaluation_cases()
 
 
-# @pytest.mark.parametrize(
-#     "id, steps",
-#     [(c["id"], c["steps"]) for c in EVALUATION_CASES],
-#     ids=[c["id"] for c in EVALUATION_CASES],
-# )
-# @pytest.mark.parametrize("provider", PROVIDERS, ids=lambda x: x["model"] + (' on ' + x["api_base"] if x.get("api_base") else ''))
-# @pytest.mark.repeated(times=5, threshold=0)
 @pytest.mark.parametrize(
     "id, steps",
     [
@@ -272,13 +297,12 @@ def test_extract_calories(id, steps, provider):
             response = completion(**kwargs)
 
         actual = response.get('choices')[0].to_dict().get('message', {}).get('content').strip()
-        print(f"Test ID: {id}, Response: {actual}")
 
         for expectation in expectations:
             if expectation["type"] == "contains":
                 assert expectation["value"] in actual, f"Expectation failed: response does not contain '{expectation['value']}'"
             elif expectation["type"] == "equals":
-                assert actual == expectation["value"], f"Expectation failed: response '{actual}' != expected '{expectation['value']}'"
+                expect_equality(actual, expectation)
             elif expectation["type"] in {"regex", "regexp", "regular_expression", "match"}:
                 if not re.search(expectation["value"], actual):
                     raise AssertionError(f"Expectation failed: response '{actual}' does not match regex '{expectation['value']}'")

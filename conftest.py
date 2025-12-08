@@ -29,7 +29,6 @@ def pytest_runtest_makereport(item, call):
                 if hasattr(item, "_repeated_summary"):
                     passed, total = item._repeated_summary
                     TEST_RESULTS[test_id][provider_name] = {"passed": passed, "total": total}
-                    print(f"\n[DEBUG] Captured: {test_id} / {provider_name} = {passed}/{total}")
 
 
 def pytest_sessionfinish(session, exitstatus):

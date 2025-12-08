@@ -2,17 +2,12 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "evaluate_nutrition_information_extraction",
+      "label": "evaluate",
       "type": "shell",
-      "command": "docker",
+      "command": "bash",
       "args": [
-        "compose",
-        "-f", "${workspaceFolder}/nutrition_information_extraction/docker-compose.yaml",
-        "--project-directory", "${workspaceFolder}/nutrition_information_extraction",
-        "up",
-        "--build",
-        "--abort-on-container-exit",
-        "--exit-code-from", "evaluator"
+        "-c",
+        "IFS='/' read -r PROJECT_PATH EVALUATION_PATH <<< '${input:evaluationChoice}' && PROJECT_PATH=$PROJECT_PATH EVALUATION_PATH=$EVALUATION_PATH docker compose up --build --abort-on-container-exit --exit-code-from evaluator"
       ],
       "problemMatcher": [],
       "group": {
@@ -21,23 +16,36 @@
       }
     },
     {
-      "label": "evaluate_nutrition_ocr",
+      "label": "test_functions",
       "type": "shell",
       "command": "docker",
       "args": [
         "compose",
-        "-f", "${workspaceFolder}/nutrition_ocr/docker-compose.yaml",
-        "--project-directory", "${workspaceFolder}/nutrition_ocr",
+        "-f",
+        "${workspaceFolder}/test_model_evaluation/docker-compose.yaml",
+        "--project-directory",
+        "${workspaceFolder}/test_model_evaluation",
         "up",
         "--build",
         "--abort-on-container-exit",
-        "--exit-code-from", "evaluator"
+        "--exit-code-from",
+        "tester"
       ],
       "problemMatcher": [],
       "group": {
-        "kind": "test",
-        "isDefault": true
+        "kind": "test"
       }
+    }
+  ],
+  "inputs": [
+    {
+      "id": "evaluationChoice",
+      "type": "pickString",
+      "description": "Select evaluation to run",
+      "options": [
+        "nutrition_information_extraction/evaluation/calorie_extraction.yaml"
+      ],
+      "default": "nutrition_information_extraction/evaluation/calorie_extraction.yaml"
     }
   ]
 }
