@@ -43,7 +43,8 @@
       "type": "pickString",
       "description": "Select evaluation to run",
       "options": [
-        "nutrition_information_extraction/evaluation/calorie_extraction.yaml"
+        "nutrition_information_extraction/evaluation/calorie_extraction.yaml",
+        "nutrition_information_extraction/evaluation/calories_and_serving_size_extraction.yaml"
       ],
       "default": "nutrition_information_extraction/evaluation/calorie_extraction.yaml"
     }
