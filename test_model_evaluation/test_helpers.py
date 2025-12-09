@@ -61,6 +61,33 @@ class TestExpectEquality:
         with pytest.raises(AssertionError, match="equality failed"):
             expect_equality('{"a": 1}', {"value": {"a": 1}})
 
+    def test_equality_passes_with_markdown_strings(self):
+        """Should pass when actual equals expected markdown string."""
+        expect_equality("# Title\nSome **bold** text.", {"value": "# Title\nSome **bold** text."})
+
+    def test_equality_passes_with_json_in_markdown(self):
+        """Should raise AssertionError when markdown strings don't match."""
+        actual = """```json
+{
+  "calories": 180,
+  "serving_size": 40.0,
+  "unit": "g"
+}
+```"""
+        expected = {
+            "calories": 180,
+            "serving_size": 40.0,
+            "unit": "g"
+        }
+        expect_equality(actual, {"value": expected})
+
+    def test_equality_passes_with_string_with_trailing_spaces(self):
+        """Should pass when actual equals expected string with newlines."""
+        expect_equality("Something.   ", {"value": "Something."})
+
+    def test_equality_passes_with_string_with_trailing_newlines(self):
+        """Should pass when actual equals expected string with newlines."""
+        expect_equality("Line1\nLine2\n\n", {"value": "Line1\nLine2"})
 
 
 class TestExpectInRange:

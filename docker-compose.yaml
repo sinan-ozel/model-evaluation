@@ -40,7 +40,7 @@ services:
       - ./test_model_evaluation.py:/test_model_evaluation.py
       - ./conftest.py:/conftest.py
       - ./helpers:/helpers
-    command: ["pytest", "/test_model_evaluation.py", "--disable-warnings", "-vv", "--full-trace", "-rs", "-s"]
+    command: ["pytest", "/test_model_evaluation.py", "--disable-warnings", "-vvv", "--full-trace", "-rs", "-s"]
 
 networks:
   model-evaluation:

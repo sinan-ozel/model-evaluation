@@ -43,9 +43,33 @@ def expect_equality(actual: Union[str, dict, int, float, None], spec: Dict[str, 
     Supports dict, str, int, float, and None types.
     For dict comparison, compares only non-None values in expected dict,
     but actual must not have extra keys beyond what's in expected.
+
+    Special handling for LLM responses:
+    - If expected is dict and actual is string containing JSON in markdown code blocks,
+      extracts and parses the JSON for comparison.
+    - For string comparisons, strips trailing whitespace and newlines from actual.
+
     Raises AssertionError if not equal.
     """
+    import json
+    import re
+
     expected = spec["value"]
+
+    # If expected is dict but actual is string, try to extract JSON from markdown
+    if isinstance(expected, dict) and isinstance(actual, str):
+        # Try to extract JSON from markdown code block
+        json_match = re.search(r'```(?:json)?\s*\n(.*?)\n```', actual, re.DOTALL)
+        if json_match:
+            try:
+                actual = json.loads(json_match.group(1))
+            except json.JSONDecodeError:
+                # If parsing fails, keep as string and let comparison fail below
+                pass
+
+    # Strip trailing whitespace from strings
+    if isinstance(actual, str) and isinstance(expected, str):
+        actual = actual.rstrip()
 
     # Handle dict comparison - only check non-None values in expected
     if isinstance(expected, dict) and isinstance(actual, dict):
