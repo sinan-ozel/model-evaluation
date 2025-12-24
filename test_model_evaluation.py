@@ -44,7 +44,6 @@ def substitute_env_vars(obj: Any) -> Any:
     """Recursively substitute ${VAR_NAME} with environment variable values."""
     if isinstance(obj, str):
         # Replace ${VAR_NAME} with environment variable
-        import re
         def replace_var(match):
             var_name = match.group(1)
             return os.getenv(var_name, match.group(0))

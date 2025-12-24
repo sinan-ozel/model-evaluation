@@ -1,3 +1,3 @@
 _enabled: false
-api_base: http://a2cb408a24d164467bfe25bb3e248f21-932586773.ca-central-1.elb.amazonaws.com/qwen3-vl/8b
+api_base: http://aa13414f4ae9d4533a955d71ea85ef82-1683296804.ca-central-1.elb.amazonaws.com/qwen3-vl/8b
 model: ollama/qwen3-vl:8b

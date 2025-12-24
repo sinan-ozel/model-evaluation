@@ -104,7 +104,6 @@ cases:
               serving_size: 41.0
               unit: g
 
-
   - id: calories-label-mnm-mint-chocolate-candy-1
     steps:
       - input:
@@ -117,9 +116,8 @@ cases:
                 serving_size: 40.0
                 unit: g
               - calories: 220
-                serving_size: 0.24
+                serving_size: 0.25
                 unit: cup
-
 
   - id: calories-label-hersheys-candy-cane-kisses
     steps:
