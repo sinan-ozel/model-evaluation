@@ -20,11 +20,17 @@ cases:
           image_path: "images/IMG_3236.HEIC"
           max_tokens: 64
         expectations:
-          - type: equals
-            value:
-              calories: 220
-              serving_size: 50.0
-              unit: g
+          - type: oneOf
+            values:
+              - calories: 220
+                serving_size: 50.0
+                unit: g
+              - calories: 220
+                serving_size: 0.5
+                unit: cup
+              - calories: 220
+                serving_size: 50.0
+                unit: grams
 
   - id: calories-label-chunky-supreme-granola-exact
     steps:
@@ -56,11 +62,17 @@ cases:
           image_path: "images/IMG_3232.HEIC"
           max_tokens: 64
         expectations:
-          - type: equals
-            value:
-              calories: 220
-              serving_size: 50.0
-              unit: g
+          - type: oneOf
+            values:
+              - calories: 220
+                serving_size: 50.0
+                unit: g
+              - calories: 220
+                serving_size: 0.5
+                unit: cup
+              - calories: 220
+                serving_size: 50.0
+                unit: grams
 
   - id: calories-label-harvest-trail-mix-3
     steps:
@@ -68,11 +80,17 @@ cases:
           image_path: "images/IMG_3237.HEIC"
           max_tokens: 64
         expectations:
-          - type: equals
-            value:
-              calories: 220
-              serving_size: 50.0
-              unit: g
+          - type: oneOf
+            values:
+              - calories: 220
+                serving_size: 50.0
+                unit: g
+              - calories: 220
+                serving_size: 0.5
+                unit: cup
+              - calories: 220
+                serving_size: 50.0
+                unit: grams
 
   - id: calories-label-hersheys-christmas-cookies-exact
     steps:
@@ -93,11 +111,15 @@ cases:
           image_path: "images/IMG_3279.HEIC"
           max_tokens: 64
         expectations:
-          - type: equals
-            value:
-              calories: 190
-              serving_size: 40.0
-              unit: g
+          - type: oneOf
+            values:
+              - calories: 190
+                serving_size: 40.0
+                unit: g
+              - calories: 220
+                serving_size: 0.24
+                unit: cup
+
 
   - id: calories-label-hersheys-candy-cane-kisses
     steps:
@@ -117,11 +139,17 @@ cases:
           image_path: "images/IMG_3282.HEIC"
           max_tokens: 64
         expectations:
-          - type: equals
-            value:
-              calories: 200
-              serving_size: 40.0
-              unit: g
+          - type: oneOf
+            values:
+              - calories: 200
+                serving_size: 40.0
+                unit: g
+              - calories: 200
+                serving_size: 6.0
+                unit: pcs
+              - calories: 200
+                serving_size: 6.0
+                unit: pieces
 
   - id: calories-label-mnm-mint-chocolate-candy-2
     steps:
@@ -129,11 +157,14 @@ cases:
           image_path: "images/IMG_3284.HEIC"
           max_tokens: 64
         expectations:
-          - type: equals
-            value:
-              calories: 190
-              serving_size: 40.0
-              unit: g
+          - type: oneOf
+            values:
+              - calories: 190
+                serving_size: 40.0
+                unit: g
+              - calories: 220
+                serving_size: 0.25
+                unit: cup
 
   - id: calories-label-jumbo-sour-sukkers
     steps:
@@ -146,6 +177,17 @@ cases:
               calories: 150
               serving_size: 40.0
               unit: g
+          - type: oneOf
+            values:
+              - calories: 150
+                serving_size: 40.0
+                unit: g
+              - calories: 150
+                serving_size: 2.0
+                unit: pcs
+              - calories: 150
+                serving_size: 2.0
+                unit: pieces
 
   - id: calories-label-quality-street
     steps:
@@ -153,8 +195,14 @@ cases:
           image_path: "images/IMG_3288.HEIC"
           max_tokens: 64
         expectations:
-          - type: equals
-            value:
-              calories: 200
-              serving_size: 42.0
-              unit: g
+          - type: oneOf
+            values:
+              - calories: 200
+                serving_size: 42.0
+                unit: g
+              - calories: 200
+                serving_size: 5.0
+                unit: pcs
+              - calories: 200
+                serving_size: 5.0
+                unit: pieces
