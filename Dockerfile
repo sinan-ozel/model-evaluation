@@ -12,6 +12,7 @@ RUN pip install --no-cache-dir pytest-repeated==0.3.4.dev202512071416
 RUN pip install --no-cache-dir litellm==1.80.0
 RUN pip install --no-cache-dir pillow==12.0.0
 RUN pip install --no-cache-dir pillow-heif==1.1.1
+RUN pip install --no-cache-dir numpy
 
 WORKDIR /tests
 

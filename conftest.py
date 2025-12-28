@@ -3,9 +3,13 @@ from pathlib import Path
 from collections import defaultdict
 from datetime import datetime
 import os
+import statistics
+import numpy as np
 
 # Global dictionary to collect test results
 TEST_RESULTS = defaultdict(lambda: defaultdict(dict))
+# Global dictionary to collect timing results
+TIMING_RESULTS = defaultdict(lambda: defaultdict(list))
 
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
@@ -29,6 +33,10 @@ def pytest_runtest_makereport(item, call):
                 if hasattr(item, "_repeated_summary"):
                     passed, total = item._repeated_summary
                     TEST_RESULTS[test_id][provider_name] = {"passed": passed, "total": total}
+
+                    # Collect timing data if available
+                    if hasattr(item, "_timing_data"):
+                        TIMING_RESULTS[test_id][provider_name] = item._timing_data
 
 
 def pytest_sessionfinish(session, exitstatus):
@@ -74,6 +82,32 @@ def pytest_sessionfinish(session, exitstatus):
             cell = f" {passed}/{total}" if total > 0 else " - "
             row += cell + " |"
         lines.append(row)
+
+    # Add timing statistics section if we have timing data
+    if any(TIMING_RESULTS.values()):
+        lines.append("\n## Timing Statistics (seconds)\n")
+
+        # Header row for timing stats
+        timing_header = "| Provider | Min | Max | Avg | Median | 98th %ile |"
+        lines.append(timing_header)
+        lines.append("|---|---|---|---|---|---|")
+
+        # Calculate timing stats per provider across all test cases
+        for provider in providers:
+            all_timings = []
+            for test_id in test_ids:
+                timings = TIMING_RESULTS[test_id].get(provider, [])
+                all_timings.extend(timings)
+
+            if all_timings:
+                min_time = min(all_timings)
+                max_time = max(all_timings)
+                avg_time = statistics.mean(all_timings)
+                median_time = statistics.median(all_timings)
+                p98_time = np.percentile(all_timings, 98)
+
+                timing_row = f"| {provider} | {min_time:.3f} | {max_time:.3f} | {avg_time:.3f} | {median_time:.3f} | {p98_time:.3f} |"
+                lines.append(timing_row)
 
     # Write to file
     if test_ids:

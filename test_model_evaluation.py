@@ -223,7 +223,15 @@ def test_extract_calories(id, steps, provider):
         kwargs["messages"] = messages
 
         with warnings.catch_warnings():
+            start_time = time.time()
             response = completion(**kwargs)
+            end_time = time.time()
+
+            # Store timing data for this iteration
+            call_duration = end_time - start_time
+            if not hasattr(request.node, "_timing_data"):
+                request.node._timing_data = []
+            request.node._timing_data.append(call_duration)
 
         actual = response.get('choices')[0].to_dict().get('message', {}).get('content').strip()
 
