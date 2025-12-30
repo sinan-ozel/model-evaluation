@@ -239,14 +239,24 @@ def test_extract_calories(id, steps, provider, request):
 
         actual = response.get('choices')[0].to_dict().get('message', {}).get('content').strip()
 
-        # Try to parse as JSON if the expectation value is a dict
+        # Try to parse as JSON if any expectation expects a dict-shaped value.
+        # This includes direct `value` dicts as well as `oneOf`/`values` lists
+        # where each candidate is a dict. If parsing fails, keep as string.
         actual_parsed = actual
         for expectation in expectations:
-            if isinstance(expectation.get("value"), dict):
+            val = expectation.get("value")
+            vals = expectation.get("values")
+            needs_parse = False
+            if isinstance(val, dict):
+                needs_parse = True
+            elif isinstance(vals, list) and any(isinstance(v, dict) for v in vals):
+                needs_parse = True
+
+            if needs_parse:
                 try:
                     actual_parsed = json.loads(actual)
                 except (json.JSONDecodeError, ValueError):
-                    # If parsing fails, keep as string
+                    # If parsing fails, keep as string and let comparisons handle it
                     pass
                 break
 

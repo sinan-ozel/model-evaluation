@@ -56,16 +56,38 @@ def expect_equality(actual: Union[str, dict, int, float, None], spec: Dict[str, 
 
     expected = spec["value"]
 
-    # If expected is dict but actual is string, try to extract JSON from markdown
-    if isinstance(expected, dict) and isinstance(actual, str):
-        # Try to extract JSON from markdown code block
-        json_match = re.search(r'```(?:json)?\s*\n(.*?)\n```', actual, re.DOTALL)
+    # If expected is dict but actual is string, try to extract JSON from the text.
+    # Support direct JSON, JSON inside markdown code fences, or pretty-printed JSON.
+    def _try_parse_json(text: str):
+        # Try direct parse first
+        try:
+            return json.loads(text)
+        except Exception:
+            pass
+
+        # Try to extract from markdown code fence
+        json_match = re.search(r'```(?:json)?\s*\n(.*?)\n```', text, re.DOTALL)
         if json_match:
             try:
-                actual = json.loads(json_match.group(1))
-            except json.JSONDecodeError:
-                # If parsing fails, keep as string and let comparison fail below
+                return json.loads(json_match.group(1))
+            except Exception:
                 pass
+
+        # Fallback: find first '{' and last '}' and try to parse that slice
+        first = text.find('{')
+        last = text.rfind('}')
+        if first != -1 and last != -1 and last > first:
+            try:
+                return json.loads(text[first:last+1])
+            except Exception:
+                pass
+
+        return None
+
+    if isinstance(expected, dict) and isinstance(actual, str):
+        parsed = _try_parse_json(actual)
+        if parsed is not None:
+            actual = parsed
 
     # Strip trailing whitespace from strings
     if isinstance(actual, str) and isinstance(expected, str):
