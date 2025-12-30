@@ -1,5 +1,6 @@
 import os
 import warnings
+import time
 from typing import Any, Dict, List
 import re
 import yaml
@@ -202,7 +203,7 @@ EVALUATION_CASES = load_evaluation_cases()
     ids=[c["id"] for c in EVALUATION_CASES]
 )
 @pytest.mark.parametrize("provider", PROVIDERS, ids=lambda x: x["model"] + (' on ' + x["api_base"] if x.get("api_base") else ''))
-def test_extract_calories(id, steps, provider):
+def test_extract_calories(id, steps, provider, request):
     for step in steps:
         # TODO: Add support for multi-turn evaluation cases for models. (might do this, or implement it in agents)
         message_content = step["content"]
