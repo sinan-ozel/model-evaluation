@@ -5,9 +5,13 @@ from typing import Any, Dict, List
 import re
 import yaml
 import json
-from pathlib import Path
-
 import pytest
+import re
+import warnings
+import yaml
+from pathlib import Path
+from time import sleep
+from typing import Any, Dict, List
 
 from litellm import completion
 from helpers.evaluation_helpers import (
@@ -45,7 +49,6 @@ def substitute_env_vars(obj: Any) -> Any:
     """Recursively substitute ${VAR_NAME} with environment variable values."""
     if isinstance(obj, str):
         # Replace ${VAR_NAME} with environment variable
-        import re
         def replace_var(match):
             var_name = match.group(1)
             return os.getenv(var_name, match.group(0))
@@ -252,6 +255,21 @@ def test_extract_calories(id, steps, provider, request):
                 assert expectation["value"] in actual, f"Expectation failed: response does not contain '{expectation['value']}'"
             elif expectation["type"] == "equals":
                 expect_equality(actual_parsed, expectation)
+            elif expectation["type"] == "oneOf":
+                expected_values = expectation["values"]
+                if not isinstance(expected_values, list):
+                    raise ValueError(f"oneOf expectation requires a list of values, got {type(expected_values)}")
+                matched = False
+                errors = []
+                for expected_value in expected_values:
+                    try:
+                        expect_equality(actual_parsed, {"value": expected_value})
+                        matched = True
+                        break
+                    except (AssertionError, Exception) as e:
+                        errors.append(str(e))
+                if not matched:
+                    raise AssertionError(f"Expectation failed: response '{actual_parsed}' does not match any of {expected_values}. Errors: {errors}")
             elif expectation["type"] in {"regex", "regexp", "regular_expression", "match"}:
                 if not re.search(expectation["value"], actual):
                     raise AssertionError(f"Expectation failed: response '{actual}' does not match regex '{expectation['value']}'")
@@ -261,3 +279,4 @@ def test_extract_calories(id, steps, provider, request):
                 expect_approx_pct(actual, expectation)
             else:
                 raise ValueError(f"Unknown expectation type: {expectation['type']}")
+    sleep(1)
