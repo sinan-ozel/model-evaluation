@@ -226,8 +226,15 @@ def test_extract_calories(id, steps, provider, request):
                 kwargs[key] = provider[key]
         kwargs["messages"] = messages
 
+        # Enable streaming to avoid Ollama timing out before model responds.
+        kwargs.setdefault('stream', True)
+
         with warnings.catch_warnings():
             start_time = time.time()
+            # Ensure LiteLLM can reach Ollama for model info (used in cost calc)
+            if kwargs.get('api_base'):
+                os.environ.setdefault('OLLAMA_API_BASE', kwargs['api_base'])
+
             response = completion(**kwargs)
             end_time = time.time()
 
@@ -237,7 +244,92 @@ def test_extract_calories(id, steps, provider, request):
                 request.node._timing_data = []
             request.node._timing_data.append(call_duration)
 
-        actual = response.get('choices')[0].to_dict().get('message', {}).get('content').strip()
+        # Assemble actual text from streamed response chunks (robust handling)
+        def _assemble_response(resp):
+            assembled = ''
+
+            # Streaming iterator case
+            if hasattr(resp, '__iter__') and not isinstance(resp, dict):
+                for chunk in resp:
+                    d = None
+                    # Prefer a structured dict representation when available
+                    if hasattr(chunk, 'to_dict'):
+                        try:
+                            d = chunk.to_dict()
+                        except Exception:
+                            d = None
+                    elif isinstance(chunk, dict):
+                        d = chunk
+
+                    content = None
+                    if isinstance(d, dict):
+                        # Common streaming shapes: choices[0].delta.content or choices[0].message.content
+                        choices = d.get('choices')
+                        if choices and isinstance(choices, list) and len(choices) > 0:
+                            first = choices[0]
+                            if isinstance(first, dict):
+                                delta = first.get('delta') or {}
+                                if isinstance(delta, dict) and 'content' in delta:
+                                    content = delta.get('content')
+                                elif isinstance(first.get('message'), dict):
+                                    content = first.get('message', {}).get('content')
+
+                        # fallback top-level fields sometimes used by providers
+                        if content is None:
+                            if 'text' in d:
+                                content = d.get('text')
+                            elif 'content' in d:
+                                content = d.get('content')
+                    else:
+                        # primitive chunk shapes
+                        if isinstance(chunk, bytes):
+                            try:
+                                content = chunk.decode('utf-8')
+                            except Exception:
+                                content = str(chunk)
+                        else:
+                            content = str(chunk)
+
+                    if content is None:
+                        continue
+                    if isinstance(content, list):
+                        assembled += ''.join(map(str, content))
+                    else:
+                        assembled += str(content)
+
+            else:
+                # Non-streaming response — try common shapes
+                if isinstance(resp, dict):
+                    choices = resp.get('choices')
+                    if choices and isinstance(choices, list) and len(choices) > 0:
+                        first = choices[0]
+                        if isinstance(first, dict):
+                            msg = first.get('message') or {}
+                            if isinstance(msg, dict) and 'content' in msg:
+                                assembled = msg.get('content') or ''
+                            else:
+                                assembled = first.get('text') or first.get('content') or str(first)
+                        else:
+                            assembled = str(first)
+                    else:
+                        assembled = str(resp)
+                else:
+                    try:
+                        if hasattr(resp, 'to_dict'):
+                            rd = resp.to_dict()
+                            choices = rd.get('choices')
+                            if choices and isinstance(choices, list) and len(choices) > 0:
+                                assembled = (choices[0].get('message') or {}).get('content', '')
+                            else:
+                                assembled = str(rd)
+                        else:
+                            assembled = str(resp)
+                    except Exception:
+                        assembled = str(resp)
+
+            return assembled.strip()
+
+        actual = _assemble_response(response)
 
         # Try to parse as JSON if any expectation expects a dict-shaped value.
         # This includes direct `value` dicts as well as `oneOf`/`values` lists
