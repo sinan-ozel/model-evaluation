@@ -68,7 +68,7 @@ for provider_file in sorted(PROVIDERS_DIR.glob("*.yaml")):
     provider_config = substitute_env_vars(provider_config)
 
     # Skip disabled providers
-    if not provider_config.get("_enabled", True):
+    if provider_config.get("_enabled", True) == False:
         continue
 
     # Ensure the provider has required fields
